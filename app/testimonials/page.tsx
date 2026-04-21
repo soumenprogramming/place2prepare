@@ -25,7 +25,7 @@ export default function TestimonialsPage() {
           </h1>
           <p className="mt-4 max-w-2xl text-white/85">
             Every quote below is from a real Place2Prepare learner who gave us
-            permission to share. We don't pay for reviews and we don't run
+            permission to share. We don&apos;t pay for reviews and we don&apos;t run
             fake ones.
           </p>
         </div>

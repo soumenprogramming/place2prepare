@@ -41,14 +41,14 @@ export default function FaqPage() {
             Short answers to long emails.
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-white/85">
-            Couldn't find what you needed? Email{" "}
+            Couldn&apos;t find what you needed? Email{" "}
             <a
               className="underline underline-offset-2"
               href="mailto:hello@place2prepare.com"
             >
               hello@place2prepare.com
             </a>{" "}
-            and we'll reply within one working day.
+            and we&apos;ll reply within one working day.
           </p>
         </div>
       </section>

@@ -1,6 +1,14 @@
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
+/** When true (default in development), log Spring API calls made during SSR/RSC to the Node terminal. */
+function shouldLogSsrApi(): boolean {
+  if (process.env.NODE_ENV !== "development") return false;
+  if (typeof window !== "undefined") return false;
+  if (process.env.DEBUG_API === "0") return false;
+  return true;
+}
+
 export type ApiErrorPayload = {
   status: number;
   message: string;
@@ -70,16 +78,26 @@ export async function apiRequest<T>(
   options: RequestOptions = {}
 ): Promise<T> {
   const url = path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
+  const method = options.method ?? "GET";
+  const log = shouldLogSsrApi();
+  if (log) {
+    // eslint-disable-next-line no-console -- intentional dev SSR observability
+    console.info(`[SSR API] ${method} ${url}`);
+  }
   let response: Response;
   try {
     response = await fetch(url, {
-      method: options.method ?? "GET",
+      method,
       headers: buildHeaders(options),
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
       signal: options.signal,
       cache: options.cache ?? "no-store",
     });
   } catch (error) {
+    if (log) {
+      // eslint-disable-next-line no-console
+      console.info(`[SSR API] ${method} ${url} → network error`);
+    }
     throw new ApiError({
       status: 0,
       message:
@@ -87,6 +105,11 @@ export async function apiRequest<T>(
           ? "Request cancelled."
           : "Cannot reach the server. Check your connection.",
     });
+  }
+
+  if (log) {
+    // eslint-disable-next-line no-console
+    console.info(`[SSR API] ${method} ${url} → ${response.status}`);
   }
 
   if (!response.ok) {

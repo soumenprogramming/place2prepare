@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +22,7 @@ function safeRedirect(raw: string | null): string | null {
   return raw;
 }
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [apiError, setApiError] = useState("");
@@ -174,5 +174,19 @@ export default function LoginPage() {
         </Link>
       </p>
     </AuthShell>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-slate-100 text-sm text-slate-500">
+          Loading...
+        </main>
+      }
+    >
+      <LoginPageInner />
+    </Suspense>
   );
 }

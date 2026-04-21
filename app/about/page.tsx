@@ -60,7 +60,7 @@ export default function AboutPage() {
             <p className="mt-3 text-slate-600">
               So we packaged the checklists, drills, and mock interview rubrics
               we were already using with our mentees. What started as an
-              internal Notion doc is now the platform you're looking at.
+              internal Notion doc is now the platform you&apos;re looking at.
             </p>
             <p className="mt-3 text-slate-600">
               We are deliberately small. We would rather help 500 students do
@@ -109,8 +109,8 @@ export default function AboutPage() {
             Want to chat with the team?
           </h2>
           <p className="mt-3 text-slate-600">
-            Whether you're a student with questions or a campus looking to
-            partner with us, we'd love to hear from you.
+            Whether you&apos;re a student with questions or a campus looking to
+            partner with us, we&apos;d love to hear from you.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link

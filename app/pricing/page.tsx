@@ -33,7 +33,7 @@ export default function PricingPage() {
             Honest pricing. No renewal traps.
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-white/85">
-            Pay once per course when you're ready to go Premium. No monthly
+            Pay once per course when you&apos;re ready to go Premium. No monthly
             billing, no surprise charges, and you can always downgrade from
             the billing page.
           </p>
