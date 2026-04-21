@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="420" viewBox="0 0 800 420">
+  <defs>
+    <linearGradient id="a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4f46e5"/>
+      <stop offset="100%" style="stop-color:#2563eb"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="420" rx="24" fill="url(#a)"/>
+  <path d="M80 280 L200 200 L320 240 L440 140 L560 180 L720 100" stroke="#fff" stroke-width="4" fill="none" opacity="0.5"/>
+  <circle cx="200" cy="200" r="10" fill="#fff"/>
+  <circle cx="440" cy="140" r="10" fill="#fff"/>
+  <text x="48" y="64" fill="#fff" font-family="system-ui,sans-serif" font-size="28" font-weight="700">Placement roadmap</text>
+</svg>
