@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -15,6 +16,7 @@ import {
   Sparkles,
   Trophy,
   Video,
+  TrendingUp,
 } from "lucide-react";
 import { logoutUser } from "@/lib/api/auth";
 import { extractErrorMessage } from "@/lib/api/client";
@@ -37,20 +39,34 @@ function StatCard({
   value,
   subtitle,
   icon,
+  accent = "indigo",
 }: {
   title: string;
   value: string;
   subtitle: string;
   icon: React.ReactNode;
+  accent?: "indigo" | "purple" | "emerald" | "amber";
 }) {
+  const accentMap = {
+    indigo: { bg: "bg-indigo-50", text: "text-indigo-600", bar: "from-blue-500 to-indigo-500" },
+    purple: { bg: "bg-purple-50", text: "text-purple-600", bar: "from-indigo-500 to-purple-500" },
+    emerald: { bg: "bg-emerald-50", text: "text-emerald-600", bar: "from-emerald-500 to-teal-500" },
+    amber: { bg: "bg-amber-50", text: "text-amber-600", bar: "from-amber-400 to-orange-500" },
+  };
+  const a = accentMap[accent];
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-slate-600">{title}</p>
-        <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600">{icon}</div>
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover">
+      <div className={`absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r ${a.bar}`} />
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p>
+          <p className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900">{value}</p>
+          <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
+        </div>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${a.bg}`}>
+          <span className={a.text}>{icon}</span>
+        </div>
       </div>
-      <p className="mt-3 text-2xl font-bold text-slate-900">{value}</p>
-      <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
     </div>
   );
 }
@@ -58,12 +74,13 @@ function StatCard({
 function PlanBadge({ plan }: { plan: string }) {
   const normalized = plan?.toUpperCase() ?? "BASIC";
   const isPremium = normalized === "PREMIUM";
-  const styles = isPremium
-    ? "bg-amber-100 text-amber-800 border-amber-200"
-    : "bg-slate-100 text-slate-700 border-slate-200";
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${styles}`}
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+        isPremium
+          ? "border-amber-200 bg-amber-50 text-amber-800"
+          : "border-slate-200 bg-slate-50 text-slate-600"
+      }`}
     >
       {isPremium ? <Sparkles className="h-3 w-3" /> : null}
       {normalized}
@@ -74,14 +91,14 @@ function PlanBadge({ plan }: { plan: string }) {
 function StatusBadge({ status }: { status: string }) {
   const normalized = status?.toUpperCase() ?? "ACTIVE";
   const palette: Record<string, string> = {
-    ACTIVE: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    PAUSED: "bg-amber-100 text-amber-700 border-amber-200",
-    COMPLETED: "bg-indigo-100 text-indigo-700 border-indigo-200",
-    CANCELLED: "bg-rose-100 text-rose-700 border-rose-200",
+    ACTIVE: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    PAUSED: "border-amber-200 bg-amber-50 text-amber-700",
+    COMPLETED: "border-indigo-200 bg-indigo-50 text-indigo-700",
+    CANCELLED: "border-rose-200 bg-rose-50 text-rose-700",
   };
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
         palette[normalized] ?? palette.ACTIVE
       }`}
     >
@@ -146,8 +163,11 @@ export default function DashboardPage() {
 
   if (loadState === "checking" || loadState === "loading") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6 text-sm text-slate-500">
-        Loading your dashboard...
+      <main className="flex min-h-screen items-center justify-center app-shell-bg p-6">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
+          <p className="text-sm text-slate-500">Loading your dashboard…</p>
+        </div>
       </main>
     );
   }
@@ -160,48 +180,62 @@ export default function DashboardPage() {
   );
 
   return (
-    <main className="min-h-screen bg-slate-100 p-4 md:p-6">
+    <main className="min-h-screen app-shell-bg p-4 md:p-6">
       <div className="mx-auto max-w-[1400px]">
-        <header className="mb-5 rounded-3xl bg-brand-gradient p-6 text-white shadow-soft md:p-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+        {/* Header */}
+        <header className="relative mb-6 overflow-hidden rounded-3xl bg-slate-950 p-6 text-white shadow-soft md:p-8">
+          <Image
+            src="/hero-study-session.png"
+            alt=""
+            fill
+            sizes="100vw"
+            className="object-cover object-center opacity-45"
+            aria-hidden
+          />
+          <div className="absolute inset-0 page-hero-overlay" />
+
+          <div className="relative flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-sm text-white/85">
-                Welcome back, {dashboardData?.fullName ?? "Learner"}
+              <p className="text-sm text-white/80">
+                Welcome back, {dashboardData?.fullName ?? "Learner"} 👋
               </p>
-              <h1 className="mt-1 text-3xl font-bold">Student Dashboard</h1>
-              <p className="mt-2 max-w-2xl text-sm text-white/90">
+              <h1 className="mt-1 text-3xl font-extrabold tracking-tight">
+                Student Dashboard
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm text-white/85">
                 Track your placement preparation, complete your courses, and
                 stay ready for upcoming interviews.
               </p>
             </div>
             <span
-              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-wide ${
                 hasPremium
                   ? "border-amber-200 bg-amber-100/90 text-amber-900"
-                  : "border-white/40 bg-white/15 text-white"
+                  : "border-white/30 bg-white/15 text-white backdrop-blur-sm"
               }`}
             >
               {hasPremium ? <Sparkles className="h-3.5 w-3.5" /> : null}
               {hasPremium ? "Premium learner" : "Basic learner"}
             </span>
           </div>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+
+          <div className="relative mt-5 flex flex-wrap items-center gap-2.5">
             <Link
               href="/courses"
-              className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-indigo-700"
+              className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-indigo-700 shadow transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
             >
               Explore courses
             </Link>
             <Link
               href="/live"
-              className="inline-flex items-center gap-2 rounded-lg border border-white/40 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/20"
             >
               <Video className="h-4 w-4" />
               Live sessions
             </Link>
             <Link
               href="/billing"
-              className="inline-flex items-center gap-2 rounded-lg border border-white/40 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/20"
             >
               <CreditCard className="h-4 w-4" />
               Billing
@@ -212,31 +246,35 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-lg border border-white/40 px-4 py-2 text-sm font-semibold text-white/95 transition hover:bg-white/10"
+              className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white/95 backdrop-blur-sm transition hover:bg-white/20"
             >
               Logout
             </button>
           </div>
         </header>
 
-        {errorMessage ? (
-          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+        {errorMessage && (
+          <div className="mb-5 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />
             {errorMessage}
-          </p>
-        ) : null}
+          </div>
+        )}
 
+        {/* Stats */}
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatCard
             title="Learning Streak"
             value={`${dashboardData?.stats.learningStreakDays ?? 0} Days`}
             subtitle="Keep momentum for badge rewards"
-            icon={<Trophy className="h-4 w-4" />}
+            icon={<Trophy className="h-5 w-5" />}
+            accent="amber"
           />
           <StatCard
             title="Courses Enrolled"
             value={`${dashboardData?.stats.enrolledCourses ?? 0}`}
             subtitle={`${enrolledCourses.length} currently active`}
-            icon={<BookOpen className="h-4 w-4" />}
+            icon={<BookOpen className="h-5 w-5" />}
+            accent="indigo"
           />
           <StatCard
             title="Upcoming Interviews"
@@ -246,32 +284,36 @@ export default function DashboardPage() {
                 ? `Next: ${upcomingItems[0].title}`
                 : "No sessions scheduled"
             }
-            icon={<BriefcaseBusiness className="h-4 w-4" />}
+            icon={<BriefcaseBusiness className="h-5 w-5" />}
+            accent="purple"
           />
           <StatCard
             title="Weekly Learning Time"
             value={dashboardData?.stats.weeklyLearningTime ?? "0h"}
             subtitle="Target 10h / week"
-            icon={<Clock3 className="h-4 w-4" />}
+            icon={<Clock3 className="h-5 w-5" />}
+            accent="emerald"
           />
         </section>
 
+        {/* Main content */}
         <section className="mt-5 grid gap-5 lg:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
+          {/* Active courses */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card lg:col-span-2">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900">My Active Courses</h2>
+              <h2 className="text-base font-bold text-slate-900">My Active Courses</h2>
               <Link
                 href="/courses"
-                className="text-sm font-semibold text-indigo-600 hover:text-indigo-500"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 transition hover:text-indigo-700"
               >
-                Browse catalog
+                Browse catalog <ArrowUpRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-            <div className="mt-4 space-y-4">
+            <div className="mt-4 space-y-3">
               {enrolledCourses.map((course) => (
                 <div
                   key={course.enrollmentId ?? course.title}
-                  className="rounded-xl border border-slate-200 p-4 transition hover:border-indigo-200 hover:shadow-sm"
+                  className="group rounded-xl border border-slate-200 p-4 transition hover:border-indigo-200 hover:shadow-sm"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -280,51 +322,61 @@ export default function DashboardPage() {
                         <PlanBadge plan={course.planType} />
                         <StatusBadge status={course.status} />
                       </div>
-                      <p className="mt-1 text-sm text-slate-500">
+                      <p className="mt-1 text-xs text-slate-500">
                         {course.lessonsLeft} lessons remaining
                       </p>
                     </div>
                     {course.courseId ? (
                       <Link
                         href={`/courses/${course.courseId}`}
-                        className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
                       >
                         Continue
                         <ArrowUpRight className="h-3.5 w-3.5" />
                       </Link>
                     ) : null}
                   </div>
-                  <div className="mt-3 h-2 rounded-full bg-slate-100">
-                    <div
-                      className="h-2 rounded-full bg-brand-gradient shadow-[0_0_10px_rgba(99,102,241,0.4)]"
-                      style={{ width: `${Math.min(100, Math.max(0, course.progress))}%` }}
-                    />
+                  {/* Progress bar */}
+                  <div className="mt-3">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-brand-gradient transition-all duration-500"
+                        style={{ width: `${Math.min(100, Math.max(0, course.progress))}%` }}
+                      />
+                    </div>
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <p className="text-xs text-slate-500">{course.progress}% completed</p>
+                      <div className="flex items-center gap-1 text-xs text-slate-400">
+                        <TrendingUp className="h-3 w-3" />
+                        {course.lessonsLeft} left
+                      </div>
+                    </div>
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">
-                    {course.progress}% completed
-                  </p>
                 </div>
               ))}
-              {enrolledCourses.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center">
-                  <p className="text-sm font-semibold text-slate-700">
-                    You have no active courses yet.
+              {enrolledCourses.length === 0 && (
+                <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center">
+                  <BookOpen className="mx-auto h-8 w-8 text-slate-300" />
+                  <p className="mt-3 text-sm font-semibold text-slate-700">
+                    No active courses yet.
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     An administrator will assign your first course shortly.
                   </p>
                 </div>
-              ) : null}
+              )}
             </div>
           </div>
 
+          {/* Sidebar */}
           <div className="space-y-5">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            {/* Upcoming schedule */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-slate-900">Upcoming Schedule</h3>
+                <h3 className="text-sm font-bold text-slate-900">Upcoming Schedule</h3>
                 <Link
                   href="/live"
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-500"
+                  className="text-xs font-semibold text-indigo-600 transition hover:text-indigo-700"
                 >
                   View calendar
                 </Link>
@@ -333,7 +385,7 @@ export default function DashboardPage() {
                 {upcomingItems.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-xl border border-slate-200 bg-slate-50/80 p-3"
+                    className="rounded-xl border border-slate-100 bg-slate-50 p-3"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -350,52 +402,51 @@ export default function DashboardPage() {
                           </p>
                         )}
                       </div>
-                      {item.status === "LIVE" ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-rose-700">
+                      {item.status === "LIVE" && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-700">
                           <Radio className="h-3 w-3" /> live
                         </span>
-                      ) : null}
+                      )}
                     </div>
-                    <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                    <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-500">
                       <CalendarDays className="h-3.5 w-3.5" />
                       {item.time} · {item.durationMinutes}m
                     </p>
-                    {item.joinable && item.joinUrl ? (
+                    {item.joinable && item.joinUrl && (
                       <a
                         href={item.joinUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-2 inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-500"
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-indigo-500"
                       >
                         <Video className="h-3.5 w-3.5" />
                         Join now
                       </a>
-                    ) : null}
+                    )}
                   </div>
                 ))}
-                {upcomingItems.length === 0 ? (
-                  <p className="text-sm text-slate-500">
-                    No upcoming sessions right now.
-                  </p>
-                ) : null}
+                {upcomingItems.length === 0 && (
+                  <p className="text-sm text-slate-500">No upcoming sessions right now.</p>
+                )}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h3 className="text-base font-bold text-slate-900">Recent Activity</h3>
-              <div className="mt-3 space-y-3">
+            {/* Recent activity */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+              <h3 className="text-sm font-bold text-slate-900">Recent Activity</h3>
+              <div className="mt-3 space-y-2.5">
                 {activityItems.map((item, index) => (
                   <p
                     key={`${index}-${item}`}
                     className="flex items-start gap-2 text-sm text-slate-600"
                   >
-                    <CircleCheckBig className="mt-0.5 h-4 w-4 text-emerald-500" />
+                    <CircleCheckBig className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                     {item}
                   </p>
                 ))}
-                {activityItems.length === 0 ? (
+                {activityItems.length === 0 && (
                   <p className="text-sm text-slate-500">No activity yet.</p>
-                ) : null}
+                )}
               </div>
             </div>
           </div>

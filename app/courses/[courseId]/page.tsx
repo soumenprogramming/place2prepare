@@ -180,7 +180,7 @@ export default function CourseDetailPage() {
 
   if (loadState === "checking" || loadState === "loading") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6 text-sm text-slate-500">
+      <main className="flex min-h-screen items-center justify-center app-shell-bg p-6 text-sm text-slate-500">
         Loading course...
       </main>
     );
@@ -190,7 +190,7 @@ export default function CourseDetailPage() {
 
   if (loadState === "error" || !detail) {
     return (
-      <main className="min-h-screen bg-slate-100 p-4 md:p-6">
+      <main className="min-h-screen app-shell-bg p-4 md:p-6">
         <div className="mx-auto max-w-3xl">
           <Link
             href="/courses"
@@ -238,7 +238,7 @@ export default function CourseDetailPage() {
   const nextLesson = lessons?.lessons.find((item) => !item.completed) ?? lessons?.lessons[0];
 
   return (
-    <main className="min-h-screen bg-slate-100 p-4 md:p-6">
+    <main className="min-h-screen app-shell-bg p-4 md:p-6">
       <div className="mx-auto max-w-5xl">
         <div className="flex items-center justify-between gap-3">
           <Link

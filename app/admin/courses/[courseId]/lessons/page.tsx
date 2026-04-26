@@ -224,7 +224,7 @@ export default function AdminLessonsPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6 text-sm text-slate-500">
+      <main className="flex min-h-screen items-center justify-center app-shell-bg p-6 text-sm text-slate-500">
         Loading lesson manager...
       </main>
     );
@@ -232,7 +232,7 @@ export default function AdminLessonsPage() {
 
   if (!course) {
     return (
-      <main className="min-h-screen bg-slate-100 p-4 md:p-6">
+      <main className="min-h-screen app-shell-bg p-4 md:p-6">
         <div className="mx-auto max-w-3xl">
           <Link
             href="/admin/dashboard"
@@ -250,7 +250,7 @@ export default function AdminLessonsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-4 md:p-6">
+    <main className="min-h-screen app-shell-bg p-4 md:p-6">
       <div className="mx-auto max-w-[1400px] space-y-5">
         <div className="flex items-center justify-between gap-3">
           <Link

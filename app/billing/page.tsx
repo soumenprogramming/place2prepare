@@ -174,7 +174,7 @@ export default function BillingPage() {
 
   if (loadState === "checking" || loadState === "loading") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 text-sm text-slate-500">
+      <main className="flex min-h-screen items-center justify-center app-shell-bg text-sm text-slate-500">
         Loading your billing history...
       </main>
     );
@@ -192,7 +192,7 @@ export default function BillingPage() {
   );
 
   return (
-    <main className="min-h-screen bg-slate-100 p-4 md:p-6">
+    <main className="min-h-screen app-shell-bg p-4 md:p-6">
       <div className="mx-auto max-w-5xl space-y-6">
         <header className="rounded-3xl bg-brand-gradient p-6 text-white shadow-soft md:p-8">
           <Link

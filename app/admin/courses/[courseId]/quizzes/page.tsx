@@ -403,14 +403,14 @@ export default function AdminQuizzesPage() {
 
   if (!token || loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6 text-sm text-slate-500">
+      <main className="flex min-h-screen items-center justify-center app-shell-bg p-6 text-sm text-slate-500">
         Loading quiz manager...
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-4 md:p-6">
+    <main className="min-h-screen app-shell-bg p-4 md:p-6">
       <div className="mx-auto max-w-6xl space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link

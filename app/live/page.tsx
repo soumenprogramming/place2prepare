@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -192,7 +193,7 @@ export default function LiveCalendarPage() {
 
   if (loadState === "checking" || loadState === "loading") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 text-sm text-slate-500">
+      <main className="flex min-h-screen items-center justify-center app-shell-bg text-sm text-slate-500">
         Loading your live calendar...
       </main>
     );
@@ -201,7 +202,7 @@ export default function LiveCalendarPage() {
   const role = getSession()?.role ?? "STUDENT";
 
   return (
-    <main className="min-h-screen bg-slate-100 p-4 md:p-6">
+    <main className="min-h-screen app-shell-bg p-4 md:p-6">
       <div className="mx-auto max-w-5xl">
         <Link
           href={homePathForRole(role)}
@@ -211,14 +212,25 @@ export default function LiveCalendarPage() {
           Back to dashboard
         </Link>
 
-        <header className="rounded-3xl bg-brand-gradient p-6 text-white shadow-soft md:p-8">
-          <p className="text-sm text-white/85">Live classroom</p>
-          <h1 className="mt-1 text-3xl font-bold">Live sessions</h1>
-          <p className="mt-2 max-w-2xl text-sm text-white/90">
-            Mentor-led doubt clearing, mock interviews, and community Q&amp;A.
-            Sessions linked to courses you&apos;re enrolled in will show a join
-            button 15 minutes before start time.
-          </p>
+        <header className="relative overflow-hidden rounded-3xl bg-slate-950 p-6 text-white shadow-soft md:p-8">
+          <Image
+            src="/hero-study-session.png"
+            alt=""
+            fill
+            sizes="100vw"
+            className="object-cover object-center opacity-45"
+            aria-hidden
+          />
+          <div className="absolute inset-0 page-hero-overlay" />
+          <div className="relative">
+            <p className="text-sm text-white/85">Live classroom</p>
+            <h1 className="mt-1 text-3xl font-bold">Live sessions</h1>
+            <p className="mt-2 max-w-2xl text-sm text-white/90">
+              Mentor-led doubt clearing, mock interviews, and community Q&amp;A.
+              Sessions linked to courses you&apos;re enrolled in will show a join
+              button 15 minutes before start time.
+            </p>
+          </div>
         </header>
 
         {errorMessage ? (

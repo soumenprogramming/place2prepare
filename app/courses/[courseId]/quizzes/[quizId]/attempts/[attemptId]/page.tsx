@@ -181,7 +181,7 @@ export default function QuizAttemptPage() {
 
   if (loadState === "checking" || loadState === "loading") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6 text-sm text-slate-500">
+      <main className="flex min-h-screen items-center justify-center app-shell-bg p-6 text-sm text-slate-500">
         Loading quiz attempt...
       </main>
     );
@@ -189,7 +189,7 @@ export default function QuizAttemptPage() {
 
   if (loadState === "error" || !attempt) {
     return (
-      <main className="min-h-screen bg-slate-100 p-4 md:p-6">
+      <main className="min-h-screen app-shell-bg p-4 md:p-6">
         <div className="mx-auto max-w-3xl">
           <Link
             href={`/courses/${courseId}/quizzes/${quizId}`}
@@ -211,7 +211,7 @@ export default function QuizAttemptPage() {
   const canNavigateNext = activeIndex < attempt.questions.length - 1;
 
   return (
-    <main className="min-h-screen bg-slate-100 pb-16">
+    <main className="min-h-screen app-shell-bg pb-16">
       <div className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 md:px-6">
           <div className="flex min-w-0 items-center gap-3">

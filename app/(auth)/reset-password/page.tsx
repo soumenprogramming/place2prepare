@@ -127,7 +127,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-slate-100 text-sm text-slate-500">
+        <main className="flex min-h-screen items-center justify-center app-shell-bg text-sm text-slate-500">
           Loading...
         </main>
       }
