@@ -263,14 +263,14 @@ export default function AdminLiveSessionsPage() {
 
   if (loadState === "checking" || loadState === "loading") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 text-sm text-slate-500">
+      <main className="flex min-h-screen items-center justify-center app-shell-bg text-sm text-slate-500">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading live sessions...
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-4 md:p-6">
+    <main className="min-h-screen app-shell-bg p-4 md:p-6">
       <div className="mx-auto max-w-6xl space-y-5">
         <div className="flex items-center justify-between">
           <Link

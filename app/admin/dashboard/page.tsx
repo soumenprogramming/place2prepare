@@ -254,7 +254,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-4 md:p-6">
+    <main className="min-h-screen app-shell-bg p-4 md:p-6">
       <div className="mx-auto max-w-[1400px] space-y-5">
         <header className="rounded-3xl bg-brand-gradient p-6 text-white shadow-soft md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-4">

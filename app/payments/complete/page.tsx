@@ -57,7 +57,7 @@ function CompleteInner() {
   }, [orderIdParam, router]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
+    <main className="flex min-h-screen items-center justify-center app-shell-bg p-6">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
         {state === "processing" ? (
           <>
@@ -130,7 +130,7 @@ export default function PaymentCompletePage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-slate-100 text-sm text-slate-500">
+        <main className="flex min-h-screen items-center justify-center app-shell-bg text-sm text-slate-500">
           Loading…
         </main>
       }
