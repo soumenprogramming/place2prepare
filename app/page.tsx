@@ -127,7 +127,7 @@ export default function HomePage() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
               <Zap className="h-3.5 w-3.5 text-amber-300" />
-              Built for final-year B.Tech students
+              From beginner to job-ready — all in one place.
             </div>
             <h1 className="mt-5 text-balance font-display text-4xl font-extrabold leading-[1.06] tracking-tight md:text-6xl">
               Placement preparation with a real interview room feel.
