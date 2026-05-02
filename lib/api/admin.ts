@@ -79,23 +79,6 @@ export function getAdminOverview(token: string) {
   return apiRequest<AdminOverview>("/api/v1/admin/overview", { token });
 }
 
-export type AdminPremiumPrice = {
-  priceInr: number;
-  currency: string;
-};
-
-export function getAdminPremiumPricing(token: string) {
-  return apiRequest<AdminPremiumPrice>("/api/v1/admin/pricing/premium", { token });
-}
-
-export function putAdminPremiumPricing(token: string, payload: { priceInr: number }) {
-  return apiRequest<AdminPremiumPrice>("/api/v1/admin/pricing/premium", {
-    method: "PUT",
-    token,
-    body: payload,
-  });
-}
-
 export function getAdminStudents(token: string) {
   return apiRequest<AdminStudent[]>("/api/v1/admin/students", { token });
 }

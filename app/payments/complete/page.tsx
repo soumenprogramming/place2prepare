@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { PageLoader } from "@/components/ui/page-loader";
-import { confirmMockOrder, getPaymentOrder } from "@/lib/api/payments";
+import { confirmMockOrder } from "@/lib/api/payments";
 import { extractErrorMessage } from "@/lib/api/client";
 import { getSession } from "@/lib/auth/session";
 
@@ -15,7 +15,6 @@ function CompleteInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderIdParam = searchParams.get("orderId");
-  const stripeSessionId = searchParams.get("session_id");
   const [state, setState] = useState<State>("processing");
   const [error, setError] = useState("");
   const [orderTitle, setOrderTitle] = useState("");
@@ -27,13 +26,11 @@ function CompleteInner() {
 
     const session = getSession();
     if (!session) {
-      const returnPath =
-        orderIdParam != null
-          ? `/payments/complete?orderId=${orderIdParam}${
-              stripeSessionId ? `&session_id=${encodeURIComponent(stripeSessionId)}` : ""
-            }`
-          : "/billing";
-      router.replace(`/login?redirect=${encodeURIComponent(returnPath)}`);
+      router.replace(
+        `/login?redirect=${encodeURIComponent(
+          orderIdParam ? `/payments/complete?orderId=${orderIdParam}` : "/billing"
+        )}`
+      );
       return;
     }
     if (!orderIdParam) {
@@ -48,36 +45,17 @@ function CompleteInner() {
       return;
     }
 
-    const afterFinalize = (order: { courseTitle: string; status: string }) => {
-      setOrderTitle(order.courseTitle);
-      if (order.status === "COMPLETED") {
+    confirmMockOrder(session.token, orderId)
+      .then((order) => {
+        setOrderTitle(order.courseTitle);
         setState("success");
         window.setTimeout(() => router.push("/billing"), 2200);
-      } else {
-        setState("failed");
-        setError(
-          "Payment is not completed yet. If you were charged, check Billing in a few minutes or contact support."
-        );
-      }
-    };
-
-    if (stripeSessionId && stripeSessionId.length > 0) {
-      getPaymentOrder(session.token, orderId, stripeSessionId)
-        .then(afterFinalize)
-        .catch((err) => {
-          setState("failed");
-          setError(extractErrorMessage(err, "Couldn't verify this payment with Stripe."));
-        });
-      return;
-    }
-
-    confirmMockOrder(session.token, orderId)
-      .then((order) => afterFinalize(order))
+      })
       .catch((err) => {
         setState("failed");
         setError(extractErrorMessage(err, "Couldn't confirm this payment."));
       });
-  }, [orderIdParam, router, stripeSessionId]);
+  }, [orderIdParam, router]);
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f4f6fb] p-6">
@@ -90,12 +68,10 @@ function CompleteInner() {
               <Loader2 className="relative mx-auto h-11 w-11 animate-spin text-indigo-600" strokeWidth={2} />
             </div>
             <h1 className="font-display mt-5 text-xl font-extrabold tracking-tight text-slate-900">
-              {stripeSessionId ? "Verifying payment…" : "Confirming your payment…"}
+              Confirming your payment…
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-slate-500">
-              {stripeSessionId
-                ? "Talking to Stripe to activate Premium on your account."
-                : "Please wait while we activate Premium on your account."}
+              Please wait while we activate Premium on your account.
             </p>
           </>
         ) : state === "success" ? (

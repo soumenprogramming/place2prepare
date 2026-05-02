@@ -62,20 +62,6 @@ export function startCheckout(token: string, courseId: number) {
   });
 }
 
-export function getPaymentOrder(
-  token: string,
-  orderId: number,
-  checkoutSessionId?: string
-) {
-  const qs =
-    checkoutSessionId && checkoutSessionId.length > 0
-      ? `?checkoutSessionId=${encodeURIComponent(checkoutSessionId)}`
-      : "";
-  return apiRequest<PaymentOrder>(`/api/v1/payments/orders/${orderId}${qs}`, {
-    token,
-  });
-}
-
 export function confirmMockOrder(token: string, orderId: number) {
   return apiRequest<PaymentOrder>(
     `/api/v1/payments/orders/${orderId}/mock-confirm`,

@@ -6,9 +6,7 @@ import com.soumenprogramming.onlinelearning.place2prepare.admin.dto.AdminStudent
 import com.soumenprogramming.onlinelearning.place2prepare.admin.dto.AssignCourseRequest;
 import com.soumenprogramming.onlinelearning.place2prepare.admin.dto.CreateCourseRequest;
 import com.soumenprogramming.onlinelearning.place2prepare.admin.dto.CreateSubjectRequest;
-import com.soumenprogramming.onlinelearning.place2prepare.admin.dto.PremiumPriceResponse;
 import com.soumenprogramming.onlinelearning.place2prepare.admin.dto.UpdateEnrollmentRequest;
-import com.soumenprogramming.onlinelearning.place2prepare.admin.dto.UpdatePremiumPriceRequest;
 import com.soumenprogramming.onlinelearning.place2prepare.course.dto.CourseResponse;
 import com.soumenprogramming.onlinelearning.place2prepare.course.dto.SubjectResponse;
 import jakarta.validation.Valid;
@@ -21,7 +19,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,17 +36,6 @@ public class AdminController {
     @GetMapping("/overview")
     public AdminOverviewResponse overview() {
         return adminService.getOverview();
-    }
-
-    @GetMapping("/pricing/premium")
-    public PremiumPriceResponse getPremiumPricing() {
-        return adminService.getPremiumPricing();
-    }
-
-    @PutMapping("/pricing/premium")
-    public PremiumPriceResponse updatePremiumPricing(@Valid @RequestBody UpdatePremiumPriceRequest request,
-                                                     Authentication authentication) {
-        return adminService.updatePremiumPricing(request, authentication.getName());
     }
 
     @GetMapping("/students")

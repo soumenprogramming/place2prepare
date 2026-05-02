@@ -14,11 +14,10 @@ import {
   Pencil,
   Sparkles,
   Video,
-  IndianRupee,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MarketingShell } from "@/components/marketing/page-shell";
+import { logoutUser } from "@/lib/api/auth";
 import NotificationBell from "@/components/notifications/notification-bell";
 import { PageLoader } from "@/components/ui/page-loader";
 import {
@@ -28,8 +27,6 @@ import {
   createSubject,
   getAdminCourses,
   getAdminOverview,
-  getAdminPremiumPricing,
-  putAdminPremiumPricing,
   getAdminAdmins,
   getAdminStudentProfile,
   getAdminStudents,
@@ -91,8 +88,6 @@ export default function AdminDashboardPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [premiumPriceInput, setPremiumPriceInput] = useState("");
-  const [premiumCurrency, setPremiumCurrency] = useState("INR");
   const [loading, setLoading] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
@@ -132,6 +127,18 @@ export default function AdminDashboardPage() {
   const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
   const role = typeof window !== "undefined" ? localStorage.getItem("userRole") : null;
 
+  async function handleLogout() {
+    try {
+      await logoutUser(token ?? undefined);
+    } catch {
+      // Clear client auth state even if backend logout call fails.
+    } finally {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userRole");
+      router.push("/login");
+    }
+  }
+
   async function loadData() {
     if (!token || role !== "ADMIN") {
       localStorage.removeItem("accessToken");
@@ -142,22 +149,19 @@ export default function AdminDashboardPage() {
     setLoading(true);
     setError("");
     try {
-      const [overviewData, studentData, adminData, subjectData, courseData, premiumPricing] =
+      const [overviewData, studentData, adminData, subjectData, courseData] =
         await Promise.all([
           getAdminOverview(token),
           getAdminStudents(token),
           getAdminAdmins(token),
           getAdminSubjects(token),
           getAdminCourses(token),
-          getAdminPremiumPricing(token),
         ]);
       setOverview(overviewData);
       setStudents(studentData);
       setAdmins(adminData);
       setSubjects(subjectData);
       setCourses(courseData);
-      setPremiumPriceInput(String(premiumPricing.priceInr));
-      setPremiumCurrency(premiumPricing.currency);
       setIsAuthChecking(false);
     } catch (err) {
       localStorage.removeItem("accessToken");
@@ -179,11 +183,7 @@ export default function AdminDashboardPage() {
   );
 
   if (isAuthChecking) {
-    return (
-      <MarketingShell>
-        <PageLoader message="Loading admin console…" />
-      </MarketingShell>
-    );
+    return <PageLoader message="Loading admin console…" />;
   }
 
   async function onCreateSubject() {
@@ -341,35 +341,8 @@ export default function AdminDashboardPage() {
     }
   }
 
-  async function onSavePremiumPrice() {
-    if (!token) return;
-    const n = Number.parseFloat(premiumPriceInput.replace(",", "."));
-    if (!Number.isFinite(n) || n < 0.01 || n > 999999.99) {
-      setError("Enter a price between 0.01 and 999999.99.");
-      return;
-    }
-    setError("");
-    setSuccess("");
-    setLoading(true);
-    try {
-      const updated = await putAdminPremiumPricing(token, {
-        priceInr: Math.round(n * 100) / 100,
-      });
-      setPremiumPriceInput(String(updated.priceInr));
-      setPremiumCurrency(updated.currency);
-      setSuccess(
-        "Premium checkout price saved. The public pricing page will reflect this within a few minutes."
-      );
-    } catch (err) {
-      setError(extractErrorMessage(err, "Could not save premium price."));
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
-    <MarketingShell>
-      <div className="relative min-h-screen overflow-x-hidden bg-[#f4f6fb] p-4 md:p-6">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#f4f6fb] p-4 md:p-6">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_80%_0%,rgba(99,102,241,0.09),transparent_50%)]" />
       <div className="relative mx-auto max-w-[1400px] space-y-5">
         <header className="relative rounded-[1.75rem] border border-white/20 bg-brand-gradient p-6 text-white shadow-[0_28px_60px_-24px_rgba(79,70,229,0.45)] md:p-8">
@@ -395,6 +368,13 @@ export default function AdminDashboardPage() {
               Live sessions
             </Link>
             {token ? <NotificationBell token={token} tone="dark" /> : null}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg border border-white/40 px-4 py-2 text-sm font-semibold text-white/95 transition hover:bg-white/10"
+            >
+              Logout
+            </button>
           </div>
         </header>
 
@@ -408,39 +388,6 @@ export default function AdminDashboardPage() {
             {success}
           </p>
         ) : null}
-
-        <section
-          id="admin-premium-pricing"
-          className="scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">Premium checkout price</h2>
-              <p className="mt-1 max-w-2xl text-sm text-slate-500">
-                One-time amount learners pay when upgrading a course to Premium. Checkout and billing use this
-                value; the marketing pricing page loads it from the same API.
-              </p>
-            </div>
-            <div className="rounded-xl bg-indigo-50 p-2.5 text-indigo-600">
-              <IndianRupee className="h-5 w-5" />
-            </div>
-          </div>
-          <div className="mt-4 flex max-w-md flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="min-w-0 flex-1">
-              <Input
-                label={`Amount (${premiumCurrency})`}
-                type="number"
-                step="0.01"
-                min={0.01}
-                value={premiumPriceInput}
-                onChange={(e) => setPremiumPriceInput(e.target.value)}
-              />
-            </div>
-            <Button type="button" onClick={() => void onSavePremiumPrice()} loading={loading}>
-              Save price
-            </Button>
-          </div>
-        </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <StatCard
@@ -925,7 +872,6 @@ export default function AdminDashboardPage() {
           )}
         </section>
       </div>
-      </div>
-    </MarketingShell>
+    </main>
   );
 }

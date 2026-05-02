@@ -17,7 +17,6 @@ import {
   X,
 } from "lucide-react";
 import { PageLoader } from "@/components/ui/page-loader";
-import { MarketingShell } from "@/components/marketing/page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { extractErrorMessage } from "@/lib/api/client";
@@ -264,16 +263,11 @@ export default function AdminLiveSessionsPage() {
   }
 
   if (loadState === "checking" || loadState === "loading") {
-    return (
-      <MarketingShell>
-        <PageLoader message="Loading live sessions…" />
-      </MarketingShell>
-    );
+    return <PageLoader message="Loading live sessions…" />;
   }
 
   return (
-    <MarketingShell>
-      <div className="relative min-h-screen overflow-hidden bg-[#f4f6fb] p-4 md:p-6">
+    <main className="relative min-h-screen overflow-hidden bg-[#f4f6fb] p-4 md:p-6">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_60%_-10%,rgba(99,102,241,0.07),transparent_55%)]" />
       <div className="relative mx-auto max-w-6xl space-y-5">
         <div className="flex items-center justify-between">
@@ -611,7 +605,6 @@ export default function AdminLiveSessionsPage() {
           )}
         </section>
       </div>
-      </div>
-    </MarketingShell>
+    </main>
   );
 }

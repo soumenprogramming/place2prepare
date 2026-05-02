@@ -49,7 +49,7 @@ function LoginPageInner() {
       });
       setSession(response.token, response.role);
       const redirectTo = safeRedirect(searchParams.get("redirect"));
-      router.push(redirectTo ?? homePathForRole(response.role));
+      router.push(redirectTo ?? homePathForRole(response.role === "ADMIN" ? "ADMIN" : "STUDENT"));
     } catch (error) {
       const fieldErrors = extractFieldErrors(error);
       if (fieldErrors) {
@@ -90,7 +90,9 @@ function LoginPageInner() {
     if (socialToken && socialRole) {
       setSession(socialToken, socialRole);
       const redirectTo = safeRedirect(searchParams.get("redirect"));
-      router.replace(redirectTo ?? homePathForRole(socialRole));
+      router.replace(
+        redirectTo ?? homePathForRole(socialRole === "ADMIN" ? "ADMIN" : "STUDENT")
+      );
       return;
     }
 

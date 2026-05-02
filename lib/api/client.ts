@@ -33,8 +33,6 @@ type RequestOptions = {
   body?: unknown;
   signal?: AbortSignal;
   cache?: RequestCache;
-  /** Next.js App Router: forwarded to `fetch` for ISR / revalidation */
-  next?: { revalidate?: number };
 };
 
 function buildHeaders(options: RequestOptions): HeadersInit {
@@ -94,7 +92,6 @@ export async function apiRequest<T>(
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
       signal: options.signal,
       cache: options.cache ?? "no-store",
-      ...(options.next ? { next: options.next } : {}),
     });
   } catch (error) {
     if (log) {

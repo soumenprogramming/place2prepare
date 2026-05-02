@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   ArrowUpRight,
   BookOpen,
   BriefcaseBusiness,
@@ -21,10 +20,13 @@ import {
 } from "lucide-react";
 import { logoutUser } from "@/lib/api/auth";
 import { extractErrorMessage } from "@/lib/api/client";
-import { MarketingShell } from "@/components/marketing/page-shell";
 import NotificationBell from "@/components/notifications/notification-bell";
 import { PageLoader } from "@/components/ui/page-loader";
-import { clearSession, getSession } from "@/lib/auth/session";
+import {
+  clearSession,
+  getSession,
+  homePathForRole,
+} from "@/lib/auth/session";
 import {
   getDashboardOverview,
   type DashboardOverview,
@@ -129,6 +131,11 @@ export default function DashboardPage() {
       router.replace("/login");
       return;
     }
+    if (session.role === "ADMIN") {
+      router.replace(homePathForRole("ADMIN"));
+      return;
+    }
+
     setSessionToken(session.token);
     setLoadState("loading");
     getDashboardOverview(session.token)
@@ -156,11 +163,7 @@ export default function DashboardPage() {
   }, [router]);
 
   if (loadState === "checking" || loadState === "loading") {
-    return (
-      <MarketingShell>
-        <PageLoader message="Loading your dashboard…" />
-      </MarketingShell>
-    );
+    return <PageLoader message="Loading your dashboard…" />;
   }
 
   const enrolledCourses: EnrolledCourse[] = dashboardData?.activeCourses ?? [];
@@ -171,8 +174,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <MarketingShell>
-      <div className="relative min-h-screen overflow-x-hidden bg-[#f4f6fb] p-4 md:p-6">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#f4f6fb] p-4 md:p-6">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,rgba(99,102,241,0.08),transparent_50%)]" />
       <div className="relative mx-auto max-w-[1400px]">
         {/* Header */}
@@ -216,13 +218,6 @@ export default function DashboardPage() {
           </div>
 
           <div className="relative z-10 mt-5 flex flex-wrap items-center gap-2.5">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white/95 backdrop-blur-sm transition hover:bg-white/20"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Home
-            </Link>
             <Link
               href="/courses"
               className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-indigo-700 shadow transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]"
@@ -463,7 +458,6 @@ export default function DashboardPage() {
           </div>
         </section>
       </div>
-      </div>
-    </MarketingShell>
+    </main>
   );
 }

@@ -48,23 +48,5 @@ public class DatabaseConstraintMigration implements CommandLineRunner {
         jdbcTemplate.execute("ALTER TABLE live_sessions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE");
         jdbcTemplate.execute("UPDATE live_sessions SET updated_at = COALESCE(updated_at, now())");
         jdbcTemplate.execute("ALTER TABLE live_sessions ALTER COLUMN updated_at SET NOT NULL");
-
-        jdbcTemplate.execute(
-                """
-                CREATE TABLE IF NOT EXISTS premium_price_setting (
-                    id BIGINT PRIMARY KEY,
-                    price_inr NUMERIC(12,2) NOT NULL,
-                    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
-                    updated_by VARCHAR(255)
-                )
-                """
-        );
-        jdbcTemplate.update(
-                """
-                INSERT INTO premium_price_setting (id, price_inr, updated_at, updated_by)
-                SELECT 1, 1499.00, now(), 'SYSTEM'
-                WHERE NOT EXISTS (SELECT 1 FROM premium_price_setting WHERE id = 1)
-                """
-        );
     }
 }

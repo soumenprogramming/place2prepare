@@ -64,7 +64,7 @@ export default function AdminRegisterPage() {
         setupKey: values.setupKey,
       });
       setSession(response.token, response.role);
-      router.push(homePathForRole(response.role));
+      router.push("/admin/dashboard");
     } catch (error) {
       const fieldErrors = extractFieldErrors(error);
       if (fieldErrors) {

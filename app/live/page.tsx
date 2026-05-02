@@ -22,7 +22,7 @@ import {
   type LiveSessionCalendar,
 } from "@/lib/api/live-sessions";
 import { PageLoader } from "@/components/ui/page-loader";
-import { clearSession, dashboardPathForRole, getSession } from "@/lib/auth/session";
+import { clearSession, getSession, homePathForRole } from "@/lib/auth/session";
 
 type LoadState = "checking" | "loading" | "ready" | "error";
 
@@ -203,7 +203,7 @@ export default function LiveCalendarPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_40%_-10%,rgba(99,102,241,0.08),transparent_55%)]" />
       <div className="relative mx-auto max-w-5xl">
         <Link
-          href={dashboardPathForRole(role)}
+          href={homePathForRole(role)}
           className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-500"
         >
           <ArrowLeft className="h-4 w-4" />

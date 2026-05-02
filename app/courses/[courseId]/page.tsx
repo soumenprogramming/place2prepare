@@ -25,10 +25,9 @@ import {
 } from "lucide-react";
 import { ApiError, extractErrorMessage } from "@/lib/api/client";
 import {
-  canActAsLearner,
   clearSession,
-  dashboardPathForRole,
   getSession,
+  homePathForRole,
   type UserRole,
 } from "@/lib/auth/session";
 import {
@@ -195,7 +194,7 @@ export default function CourseDetailPage() {
     return <PageLoader message="Loading course…" />;
   }
 
-  const dashboardHref = dashboardPathForRole(role);
+  const homeHref = homePathForRole(role);
 
   if (loadState === "error" || !detail) {
     return (
@@ -222,7 +221,7 @@ export default function CourseDetailPage() {
   const planUpper = (planType ?? "").toUpperCase();
   const showPremiumCheckout =
     !!sessionToken &&
-    canActAsLearner(role) &&
+    role === "STUDENT" &&
     course.premium &&
     !accountPremium &&
     (accessState === "NOT_ENROLLED" || accessState === "PLAN_REQUIRED") &&
@@ -291,7 +290,7 @@ export default function CourseDetailPage() {
             Back to catalog
           </Link>
           <Link
-            href={dashboardHref}
+            href={homeHref}
             className="text-sm font-semibold text-slate-600 hover:text-slate-900"
           >
             Dashboard
@@ -690,7 +689,7 @@ export default function CourseDetailPage() {
                   <p className="mt-3 text-xs text-rose-600">{enrollError}</p>
                 ) : null}
                 <div className="mt-5 flex flex-wrap gap-3">
-                  {canActAsLearner(role) &&
+                  {role === "STUDENT" &&
                   accessState === "NOT_ENROLLED" &&
                   (!course.premium || accountPremium) ? (
                     <button
@@ -709,27 +708,27 @@ export default function CourseDetailPage() {
                     Browse other courses
                   </Link>
                   <Link
-                    href={dashboardHref}
+                    href={homeHref}
                     className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                   >
                     Go to dashboard
                   </Link>
                 </div>
                 <p className="mt-4 text-xs text-slate-500">
-                  {accessState === "NOT_ENROLLED" && canActAsLearner(role) && !course.premium ? (
+                  {accessState === "NOT_ENROLLED" && role === "STUDENT" && !course.premium ? (
                     <>
                       <span className="font-semibold text-slate-700">Computer Networks</span> and{" "}
                       <span className="font-semibold text-slate-700">DBMS</span> are free on Basic — tap Enroll
                       above. For other tracks, purchase Premium once, then you can self-enroll from each course
                       page.
                     </>
-                  ) : accessState === "NOT_ENROLLED" && canActAsLearner(role) && course.premium && accountPremium ? (
+                  ) : accessState === "NOT_ENROLLED" && role === "STUDENT" && course.premium && accountPremium ? (
                     <>
                       Your Premium membership is active. Tap{" "}
                       <span className="font-semibold text-slate-700">Enroll in this course</span> above to add{" "}
                       <span className="font-semibold text-slate-700">{course.title}</span>.
                     </>
-                  ) : accessState === "NOT_ENROLLED" && canActAsLearner(role) && course.premium && !accountPremium ? (
+                  ) : accessState === "NOT_ENROLLED" && role === "STUDENT" && course.premium && !accountPremium ? (
                     <>
                       Buy Premium once from the banner above (checkout enrolls you in this course). After that you
                       can self-enroll other paid courses from the catalog.{" "}
@@ -751,7 +750,7 @@ export default function CourseDetailPage() {
                   ) : accessState === "INACTIVE" ? (
                     "This course is not accepting enrollments right now."
                   ) : (
-                    "Sign in to self-enroll from the catalog."
+                    "Sign in with a student account to self-enroll from the catalog."
                   )}
                 </p>
               </div>

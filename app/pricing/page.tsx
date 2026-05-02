@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, Sparkles, Zap, Shield, HeartHandshake } from "lucide-react";
 import { MarketingShell } from "@/components/marketing/page-shell";
-import { PricingPlanCta } from "@/components/marketing/pricing-plan-cta";
-import { getPublicPremiumPrice } from "@/lib/api/public-pricing";
 import { PRICING_PLANS } from "@/lib/marketing/pricing";
 import { FAQS } from "@/lib/marketing/faq";
 import { SITE_URL } from "@/lib/marketing/site";
@@ -27,23 +25,8 @@ const TRUST_BADGES = [
   { icon: HeartHandshake, label: "Downgrade anytime", sub: "No lock-in, ever" },
 ];
 
-export default async function PricingPage() {
+export default function PricingPage() {
   const billingFaqs = FAQS.filter((f) => f.category === "Billing");
-
-  let premiumInr =
-    PRICING_PLANS.find((p) => p.id === "premium")?.priceInr ?? 1499;
-  try {
-    const remote = await getPublicPremiumPrice({ next: { revalidate: 120 } });
-    if (typeof remote.priceInr === "number" && Number.isFinite(remote.priceInr)) {
-      premiumInr = Math.round(remote.priceInr * 100) / 100;
-    }
-  } catch {
-    // API unreachable — keep catalog fallback
-  }
-
-  const plans = PRICING_PLANS.map((p) =>
-    p.id === "premium" ? { ...p, priceInr: premiumInr } : p
-  );
 
   return (
     <MarketingShell>
@@ -93,8 +76,9 @@ export default async function PricingPage() {
         <div className="absolute inset-0 bg-dots opacity-30" />
         <div className="relative mx-auto max-w-[1200px]">
           <div className="grid gap-6 md:grid-cols-3">
-            {plans.map((plan) => {
+            {PRICING_PLANS.map((plan) => {
               const isHighlight = Boolean(plan.highlight);
+              const isExternal = plan.ctaHref.startsWith("mailto:");
               return (
                 <div
                   key={plan.id}
@@ -152,14 +136,29 @@ export default async function PricingPage() {
                       </p>
                     )}
 
-                    <PricingPlanCta
-                      plan={{
-                        id: plan.id,
-                        ctaHref: plan.ctaHref,
-                        ctaLabel: plan.ctaLabel,
-                      }}
-                      isHighlight={isHighlight}
-                    />
+                    {isExternal ? (
+                      <a
+                        href={plan.ctaHref}
+                        className={`mt-8 inline-flex items-center justify-center rounded-xl px-4 py-3.5 text-sm font-bold transition active:scale-[0.98] ${
+                          isHighlight
+                            ? "bg-brand-gradient text-white shadow-glow-sm hover:brightness-110"
+                            : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        {plan.ctaLabel}
+                      </a>
+                    ) : (
+                      <Link
+                        href={plan.ctaHref}
+                        className={`mt-8 inline-flex items-center justify-center rounded-xl px-4 py-3.5 text-sm font-bold transition active:scale-[0.98] ${
+                          isHighlight
+                            ? "bg-brand-gradient text-white shadow-glow-sm hover:brightness-110"
+                            : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        {plan.ctaLabel}
+                      </Link>
+                    )}
                   </div>
                 </div>
               );

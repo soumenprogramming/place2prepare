@@ -7,7 +7,6 @@ import com.soumenprogramming.onlinelearning.place2prepare.payments.dto.InvoiceRe
 import com.soumenprogramming.onlinelearning.place2prepare.payments.dto.PaymentOrderResponse;
 import jakarta.validation.Valid;
 import java.util.Map;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,14 +46,6 @@ public class PaymentsController {
     public PaymentOrderResponse cancel(@PathVariable Long orderId,
                                        Authentication authentication) {
         return paymentsService.cancelPendingOrder(authentication.getName(), orderId);
-    }
-
-    @GetMapping("/orders/{orderId}")
-    public PaymentOrderResponse getOrder(@PathVariable Long orderId,
-                                         @RequestParam(name = "checkoutSessionId", required = false)
-                                         String checkoutSessionId,
-                                         Authentication authentication) {
-        return paymentsService.getOrder(authentication.getName(), orderId, checkoutSessionId);
     }
 
     @PostMapping("/courses/{courseId}/downgrade")

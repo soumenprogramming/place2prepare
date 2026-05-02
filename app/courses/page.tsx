@@ -13,9 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { extractErrorMessage } from "@/lib/api/client";
-import { MarketingShell } from "@/components/marketing/page-shell";
-import { dashboardPathForRole } from "@/lib/auth/session";
-import { useSessionSnapshot } from "@/lib/auth/use-session-snapshot";
+import { getSession, homePathForRole } from "@/lib/auth/session";
 import {
   getCatalogCourses,
   getCatalogSubjects,
@@ -68,10 +66,6 @@ function CourseCardSkeleton() {
 }
 
 export default function CatalogPage() {
-  const { isLoggedIn, role } = useSessionSnapshot();
-  const backHref = dashboardPathForRole(isLoggedIn ? role : null);
-  const backLabel = !isLoggedIn ? "home" : "dashboard";
-
   const [subjects, setSubjects] = useState<CatalogSubject[]>([]);
   const [courses, setCourses] = useState<CatalogCourse[]>([]);
   const [activeSubject, setActiveSubject] = useState<string>(ALL_SUBJECTS);
@@ -79,8 +73,12 @@ export default function CatalogPage() {
   const [query, setQuery] = useState("");
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [errorMessage, setErrorMessage] = useState("");
+  const [homeHref, setHomeHref] = useState<string>("/");
 
   useEffect(() => {
+    const session = getSession();
+    setHomeHref(session ? homePathForRole(session.role) : "/");
+
     getCatalogSubjects()
       .then((data) => setSubjects(data))
       .catch(() => {
@@ -140,8 +138,7 @@ export default function CatalogPage() {
   const hasActiveFilters = activeSubject !== ALL_SUBJECTS || query;
 
   return (
-    <MarketingShell>
-      <div className="relative min-h-screen overflow-hidden bg-[#f4f6fb] p-4 md:p-6">
+    <main className="relative min-h-screen overflow-hidden bg-[#f4f6fb] p-4 md:p-6">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_-10%,rgba(99,102,241,0.07),transparent_55%)]" />
       <div className="relative mx-auto max-w-[1400px]">
         {/* Header */}
@@ -156,20 +153,20 @@ export default function CatalogPage() {
           />
           <div className="absolute inset-0 page-hero-overlay" />
 
-          <div className="relative z-10">
+          <div className="relative">
             <Link
-              href={backHref}
+              href={homeHref}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/75 transition hover:text-white"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              Back to {backLabel}
+              Back to {homeHref === "/" ? "home" : "dashboard"}
             </Link>
             <h1 className="font-display mt-3 text-3xl font-extrabold tracking-tight md:text-4xl">
               Browse the catalog
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-white/85">
-              Explore every subject and course. Open a course to enroll — Computer Networks and DBMS
-              are free on Basic; other tracks use Premium after you upgrade once.
+              Explore every subject and course offered on Place2Prepare. New
+              courses are assigned to your account by the team once you are ready.
             </p>
 
             {/* Search */}
@@ -354,11 +351,10 @@ export default function CatalogPage() {
         </section>
 
         <p className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 text-center text-xs text-slate-500 shadow-card">
-          Computer Networks and DBMS are free to enroll from a course page. Other tracks need a
-          one-time Premium upgrade first, then you can self-enroll from the catalog.
+          Enrollment is currently managed by the Place2Prepare team. Contact an
+          administrator to request access to a specific course.
         </p>
       </div>
-      </div>
-    </MarketingShell>
+    </main>
   );
 }
