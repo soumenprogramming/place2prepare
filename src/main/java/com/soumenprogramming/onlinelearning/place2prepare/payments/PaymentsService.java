@@ -6,6 +6,8 @@ import com.soumenprogramming.onlinelearning.place2prepare.dashboard.ActivityLog;
 import com.soumenprogramming.onlinelearning.place2prepare.dashboard.ActivityLogRepository;
 import com.soumenprogramming.onlinelearning.place2prepare.dashboard.Enrollment;
 import com.soumenprogramming.onlinelearning.place2prepare.dashboard.EnrollmentRepository;
+import com.soumenprogramming.onlinelearning.place2prepare.dashboard.EnrollmentStatus;
+import com.soumenprogramming.onlinelearning.place2prepare.learn.LessonRepository;
 import com.soumenprogramming.onlinelearning.place2prepare.notify.NotificationService;
 import com.soumenprogramming.onlinelearning.place2prepare.notify.NotificationType;
 import com.soumenprogramming.onlinelearning.place2prepare.payments.dto.BillingSummaryResponse;
@@ -45,6 +47,7 @@ public class PaymentsService {
     private final EnrollmentRepository enrollmentRepository;
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
+    private final LessonRepository lessonRepository;
     private final ActivityLogRepository activityLogRepository;
     private final NotificationService notificationService;
     private final PaymentGateway gateway;
@@ -58,6 +61,7 @@ public class PaymentsService {
                            EnrollmentRepository enrollmentRepository,
                            UserRepository userRepository,
                            CourseRepository courseRepository,
+                           LessonRepository lessonRepository,
                            ActivityLogRepository activityLogRepository,
                            NotificationService notificationService,
                            PaymentGateway gateway,
@@ -70,6 +74,7 @@ public class PaymentsService {
         this.enrollmentRepository = enrollmentRepository;
         this.userRepository = userRepository;
         this.courseRepository = courseRepository;
+        this.lessonRepository = lessonRepository;
         this.activityLogRepository = activityLogRepository;
         this.notificationService = notificationService;
         this.gateway = gateway;
@@ -85,11 +90,34 @@ public class PaymentsService {
         User user = resolveUser(email);
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Course not found"));
+        if (!course.isActive()) {
+            throw new ResponseStatusException(BAD_REQUEST, "This course is not available for purchase.");
+        }
+        if (course.isPremium() && user.isAccountPremium()) {
+            throw new ResponseStatusException(
+                    BAD_REQUEST,
+                    "You already have Premium membership. Open this course and use Enroll to add it, or refresh the page."
+            );
+        }
         Enrollment enrollment = enrollmentRepository.findByUserIdAndCourseId(user.getId(), courseId)
-                .orElseThrow(() -> new ResponseStatusException(
+                .orElse(null);
+        if (enrollment == null) {
+            if (!course.isPremium()) {
+                throw new ResponseStatusException(
                         BAD_REQUEST,
-                        "Enroll in this course first before upgrading to Premium."
-                ));
+                        "Use Enroll on the course page for free courses before upgrading."
+                );
+            }
+            int totalLessons = (int) Math.min(Integer.MAX_VALUE, lessonRepository.countByCourseId(courseId));
+            int lessonsLeft = Math.max(0, totalLessons);
+            enrollment = enrollmentRepository.save(
+                    new Enrollment(user, course, 0, lessonsLeft, EnrollmentStatus.ACTIVE));
+            activityLogRepository.save(new ActivityLog(
+                    user,
+                    "Enrolled in " + course.getTitle(),
+                    "SYSTEM"
+            ));
+        }
         if (PREMIUM.equalsIgnoreCase(enrollment.getPlanType())) {
             throw new ResponseStatusException(BAD_REQUEST, "You're already on the Premium plan for this course.");
         }
@@ -215,6 +243,11 @@ public class PaymentsService {
                     enrollment.setPlanType(PREMIUM);
                     enrollmentRepository.save(enrollment);
                 });
+
+        userRepository.findById(order.getUser().getId()).ifPresent(u -> {
+            u.setAccountPremium(true);
+            userRepository.save(u);
+        });
 
         // Issue an invoice if we haven't already.
         if (invoiceRepository.findByOrderId(order.getId()).isEmpty()) {

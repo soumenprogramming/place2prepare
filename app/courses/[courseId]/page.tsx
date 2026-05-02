@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -23,7 +23,7 @@ import {
   UserCircle,
   Video,
 } from "lucide-react";
-import { extractErrorMessage } from "@/lib/api/client";
+import { ApiError, extractErrorMessage } from "@/lib/api/client";
 import {
   clearSession,
   getSession,
@@ -31,6 +31,7 @@ import {
   type UserRole,
 } from "@/lib/auth/session";
 import {
+  enrollInCourse,
   getCourseAccess,
   type CourseAccessResponse,
   type CourseAccessState,
@@ -113,6 +114,38 @@ export default function CourseDetailPage() {
   const [sessionToken, setSessionToken] = useState("");
   const [upgrading, setUpgrading] = useState(false);
   const [upgradeError, setUpgradeError] = useState("");
+  const [enrolling, setEnrolling] = useState(false);
+  const [enrollError, setEnrollError] = useState("");
+
+  const loadCourseExtras = useCallback(
+    async (token: string, cid: string, response: CourseAccessResponse) => {
+      if (response.accessState !== "ALLOWED") {
+        setLessons(null);
+        setQuizzes(null);
+        setLiveSessions(null);
+        return;
+      }
+      try {
+        const lessonData = await getLessons(token, cid);
+        setLessons(lessonData);
+      } catch {
+        setLessons(null);
+      }
+      try {
+        const quizData = await getCourseQuizzes(token, cid);
+        setQuizzes(quizData);
+      } catch {
+        setQuizzes(null);
+      }
+      try {
+        const liveData = await getCourseLiveSessions(Number(cid), token);
+        setLiveSessions(liveData);
+      } catch {
+        setLiveSessions(null);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     const session = getSession();
@@ -135,29 +168,7 @@ export default function CourseDetailPage() {
     getCourseAccess(session.token, courseId)
       .then(async (response) => {
         setDetail(response);
-        if (response.accessState === "ALLOWED") {
-          try {
-            const lessonData = await getLessons(session.token, courseId);
-            setLessons(lessonData);
-          } catch {
-            setLessons(null);
-          }
-          try {
-            const quizData = await getCourseQuizzes(session.token, courseId);
-            setQuizzes(quizData);
-          } catch {
-            setQuizzes(null);
-          }
-          try {
-            const liveData = await getCourseLiveSessions(
-              Number(courseId),
-              session.token
-            );
-            setLiveSessions(liveData);
-          } catch {
-            setLiveSessions(null);
-          }
-        }
+        await loadCourseExtras(session.token, courseId, response);
         setLoadState("ready");
       })
       .catch((error: unknown) => {
@@ -177,7 +188,7 @@ export default function CourseDetailPage() {
         );
         setLoadState("error");
       });
-  }, [courseId, router]);
+  }, [courseId, router, loadCourseExtras]);
 
   if (loadState === "checking" || loadState === "loading") {
     return <PageLoader message="Loading course…" />;
@@ -205,13 +216,16 @@ export default function CourseDetailPage() {
   }
 
   const { course, accessState, reason, planType } = detail;
+  const accountPremium = detail.accountPremium ?? false;
   const isAllowed = accessState === "ALLOWED";
   const planUpper = (planType ?? "").toUpperCase();
-  const canUpgrade =
+  const showPremiumCheckout =
     !!sessionToken &&
     role === "STUDENT" &&
-    !!planType &&
-    planUpper === "BASIC";
+    course.premium &&
+    !accountPremium &&
+    (accessState === "NOT_ENROLLED" || accessState === "PLAN_REQUIRED") &&
+    (!planType || planUpper === "BASIC");
 
   async function handleUpgrade() {
     if (!sessionToken || !courseId) return;
@@ -225,6 +239,35 @@ export default function CourseDetailPage() {
         extractErrorMessage(error, "Couldn't start checkout right now.")
       );
       setUpgrading(false);
+    }
+  }
+
+  async function handleSelfEnroll() {
+    if (!sessionToken || !courseId) return;
+    setEnrolling(true);
+    setEnrollError("");
+    try {
+      const res = await enrollInCourse(sessionToken, courseId);
+      setDetail(res);
+      await loadCourseExtras(sessionToken, courseId, res);
+    } catch (error: unknown) {
+      if (error instanceof ApiError && error.status === 409) {
+        try {
+          const refreshed = await getCourseAccess(sessionToken, courseId);
+          setDetail(refreshed);
+          await loadCourseExtras(sessionToken, courseId, refreshed);
+        } catch (inner) {
+          setEnrollError(
+            extractErrorMessage(inner, "Could not refresh course access.")
+          );
+        }
+      } else {
+        setEnrollError(
+          extractErrorMessage(error, "Could not enroll right now.")
+        );
+      }
+    } finally {
+      setEnrolling(false);
     }
   }
 
@@ -280,25 +323,27 @@ export default function CourseDetailPage() {
               <BookOpen className="h-3.5 w-3.5" />
               Difficulty: {course.difficulty}
             </span>
-            {planType ? (
+            {(planType || (course.premium && accountPremium)) ? (
               <span className="inline-flex items-center gap-1">
                 <Unlock className="h-3.5 w-3.5" />
-                Your plan: {planType}
+                Your plan:{" "}
+                {course.premium && accountPremium ? "PREMIUM (membership)" : planType}
               </span>
             ) : null}
           </div>
         </header>
 
-        {canUpgrade ? (
+        {showPremiumCheckout ? (
           <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-indigo-50 p-5 shadow-sm">
             <div className="min-w-0">
               <p className="text-sm font-bold text-slate-900 inline-flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-amber-500" />
-                Upgrade to Premium
+                {accessState === "NOT_ENROLLED" ? "Purchase Premium" : "Upgrade to Premium"}
               </p>
               <p className="mt-1 text-xs text-slate-600">
-                Unlock premium lessons, quizzes, and live sessions for this
-                course. One-time payment, lifetime access on this account.
+                {accessState === "NOT_ENROLLED"
+                  ? "Checkout enrolls you in this course and unlocks lessons, quizzes, and live sessions. One-time payment on this account."
+                  : "Unlock premium lessons, quizzes, and live sessions for this course. One-time payment, lifetime access on this account."}
               </p>
               {upgradeError ? (
                 <p className="mt-2 text-xs text-rose-600">{upgradeError}</p>
@@ -319,7 +364,7 @@ export default function CourseDetailPage() {
                 className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:opacity-50"
               >
                 <Sparkles className="h-4 w-4" />
-                {upgrading ? "Starting checkout..." : "Upgrade now"}
+                {upgrading ? "Starting checkout..." : accessState === "NOT_ENROLLED" ? "Buy Premium" : "Upgrade now"}
               </button>
             </div>
           </div>
@@ -632,13 +677,30 @@ export default function CourseDetailPage() {
                     ? "Upgrade needed to unlock this course"
                     : accessState === "INACTIVE"
                       ? "Course currently unavailable"
-                      : "You are not enrolled in this course"}
+                      : accessState === "NOT_ENROLLED" && course.premium && !accountPremium
+                        ? "Premium purchase required"
+                        : "You are not enrolled in this course"}
                 </h2>
                 <p className="mt-2 text-sm text-slate-600">
                   {reason ??
-                    "Access to this course is managed by the Place2Prepare team."}
+                    "Choose how you want to access this course from the options below."}
                 </p>
+                {enrollError ? (
+                  <p className="mt-3 text-xs text-rose-600">{enrollError}</p>
+                ) : null}
                 <div className="mt-5 flex flex-wrap gap-3">
+                  {role === "STUDENT" &&
+                  accessState === "NOT_ENROLLED" &&
+                  (!course.premium || accountPremium) ? (
+                    <button
+                      type="button"
+                      onClick={handleSelfEnroll}
+                      disabled={enrolling}
+                      className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-50"
+                    >
+                      {enrolling ? "Enrolling…" : "Enroll in this course"}
+                    </button>
+                  ) : null}
                   <Link
                     href="/courses"
                     className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
@@ -647,18 +709,49 @@ export default function CourseDetailPage() {
                   </Link>
                   <Link
                     href={homeHref}
-                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                   >
                     Go to dashboard
                   </Link>
                 </div>
                 <p className="mt-4 text-xs text-slate-500">
-                  Need this course assigned? Reach out to an administrator with
-                  the course title{" "}
-                  <span className="font-semibold text-slate-700">
-                    {course.title}
-                  </span>
-                  .
+                  {accessState === "NOT_ENROLLED" && role === "STUDENT" && !course.premium ? (
+                    <>
+                      <span className="font-semibold text-slate-700">Computer Networks</span> and{" "}
+                      <span className="font-semibold text-slate-700">DBMS</span> are free on Basic — tap Enroll
+                      above. For other tracks, purchase Premium once, then you can self-enroll from each course
+                      page.
+                    </>
+                  ) : accessState === "NOT_ENROLLED" && role === "STUDENT" && course.premium && accountPremium ? (
+                    <>
+                      Your Premium membership is active. Tap{" "}
+                      <span className="font-semibold text-slate-700">Enroll in this course</span> above to add{" "}
+                      <span className="font-semibold text-slate-700">{course.title}</span>.
+                    </>
+                  ) : accessState === "NOT_ENROLLED" && role === "STUDENT" && course.premium && !accountPremium ? (
+                    <>
+                      Buy Premium once from the banner above (checkout enrolls you in this course). After that you
+                      can self-enroll other paid courses from the catalog.{" "}
+                      <span className="font-semibold text-slate-700">Computer Networks</span> and{" "}
+                      <span className="font-semibold text-slate-700">DBMS</span> stay free to enroll anytime.
+                    </>
+                  ) : accessState === "PLAN_REQUIRED" ? (
+                    <>
+                      You are enrolled on Basic. Use{" "}
+                      <span className="font-semibold text-slate-700">
+                        Upgrade now
+                      </span>{" "}
+                      or Billing to unlock{" "}
+                      <span className="font-semibold text-slate-700">
+                        {course.title}
+                      </span>
+                      .
+                    </>
+                  ) : accessState === "INACTIVE" ? (
+                    "This course is not accepting enrollments right now."
+                  ) : (
+                    "Sign in with a student account to self-enroll from the catalog."
+                  )}
                 </p>
               </div>
             </div>

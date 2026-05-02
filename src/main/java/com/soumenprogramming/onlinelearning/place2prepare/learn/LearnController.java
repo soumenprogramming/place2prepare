@@ -19,17 +19,25 @@ public class LearnController {
 
     private final EnrollmentAccessService enrollmentAccessService;
     private final LessonService lessonService;
+    private final StudentEnrollmentService studentEnrollmentService;
 
     public LearnController(EnrollmentAccessService enrollmentAccessService,
-                           LessonService lessonService) {
+                           LessonService lessonService,
+                           StudentEnrollmentService studentEnrollmentService) {
         this.enrollmentAccessService = enrollmentAccessService;
         this.lessonService = lessonService;
+        this.studentEnrollmentService = studentEnrollmentService;
     }
 
     @GetMapping("/courses/{courseId}")
     public CourseAccessResponse courseAccess(@PathVariable Long courseId,
                                              Authentication authentication) {
         return enrollmentAccessService.evaluate(authentication.getName(), courseId);
+    }
+
+    @PostMapping("/courses/{courseId}/enroll")
+    public CourseAccessResponse enroll(@PathVariable Long courseId, Authentication authentication) {
+        return studentEnrollmentService.selfEnroll(authentication.getName(), courseId);
     }
 
     @GetMapping("/courses/{courseId}/lessons")

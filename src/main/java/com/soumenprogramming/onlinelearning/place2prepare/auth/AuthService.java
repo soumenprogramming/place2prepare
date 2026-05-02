@@ -6,14 +6,9 @@ import com.soumenprogramming.onlinelearning.place2prepare.auth.dto.LoginRequest;
 import com.soumenprogramming.onlinelearning.place2prepare.auth.dto.RegisterRequest;
 import com.soumenprogramming.onlinelearning.place2prepare.auth.session.UserSessionService;
 import com.soumenprogramming.onlinelearning.place2prepare.auth.token.TokenRevocationService;
-import com.soumenprogramming.onlinelearning.place2prepare.course.Course;
-import com.soumenprogramming.onlinelearning.place2prepare.course.CourseRepository;
+import com.soumenprogramming.onlinelearning.place2prepare.config.JwtService;
 import com.soumenprogramming.onlinelearning.place2prepare.dashboard.ActivityLog;
 import com.soumenprogramming.onlinelearning.place2prepare.dashboard.ActivityLogRepository;
-import com.soumenprogramming.onlinelearning.place2prepare.dashboard.Enrollment;
-import com.soumenprogramming.onlinelearning.place2prepare.dashboard.EnrollmentRepository;
-import com.soumenprogramming.onlinelearning.place2prepare.dashboard.EnrollmentStatus;
-import com.soumenprogramming.onlinelearning.place2prepare.config.JwtService;
 import com.soumenprogramming.onlinelearning.place2prepare.user.Role;
 import com.soumenprogramming.onlinelearning.place2prepare.user.User;
 import com.soumenprogramming.onlinelearning.place2prepare.user.UserRepository;
@@ -36,8 +31,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private final CourseRepository courseRepository;
-    private final EnrollmentRepository enrollmentRepository;
     private final ActivityLogRepository activityLogRepository;
     private final TokenRevocationService tokenRevocationService;
     private final UserSessionService userSessionService;
@@ -47,8 +40,6 @@ public class AuthService {
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
                        AuthenticationManager authenticationManager,
-                       CourseRepository courseRepository,
-                       EnrollmentRepository enrollmentRepository,
                        ActivityLogRepository activityLogRepository,
                        TokenRevocationService tokenRevocationService,
                        UserSessionService userSessionService,
@@ -57,8 +48,6 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
-        this.courseRepository = courseRepository;
-        this.enrollmentRepository = enrollmentRepository;
         this.activityLogRepository = activityLogRepository;
         this.tokenRevocationService = tokenRevocationService;
         this.userSessionService = userSessionService;
@@ -79,7 +68,7 @@ public class AuthService {
                 Role.STUDENT
         );
         User savedUser = userRepository.save(user);
-        createDefaultStudentData(savedUser);
+        activityLogRepository.save(new ActivityLog(savedUser, "Account created successfully", "SYSTEM"));
         // Do not bind a server session here: the UI sends users to /login after register,
         // and an orphan session would block the first password login (hasActiveSession).
         return buildAuthResponse(savedUser, false);
@@ -171,18 +160,5 @@ public class AuthService {
                 user.getEmail(),
                 user.getRole().name()
         );
-    }
-
-    private void createDefaultStudentData(User user) {
-        courseRepository.findByActiveTrueOrderByIdAsc().stream()
-                .limit(2)
-                .forEach(course -> enrollmentRepository.save(defaultEnrollment(user, course)));
-
-        activityLogRepository.save(new ActivityLog(user, "Account created successfully", "SYSTEM"));
-        activityLogRepository.save(new ActivityLog(user, "Enrolled in starter placement tracks", "SYSTEM"));
-    }
-
-    private Enrollment defaultEnrollment(User user, Course course) {
-        return new Enrollment(user, course, 15, 22, EnrollmentStatus.ACTIVE);
     }
 }

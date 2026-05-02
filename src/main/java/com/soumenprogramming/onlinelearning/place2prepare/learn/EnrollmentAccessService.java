@@ -59,21 +59,31 @@ public class EnrollmentAccessService {
                     null,
                     null,
                     null,
-                    null
+                    null,
+                    user.isAccountPremium()
             );
         }
 
         Optional<Enrollment> enrollmentOpt = enrollmentRepository
                 .findByUserIdAndCourseId(user.getId(), course.getId());
         if (enrollmentOpt.isEmpty()) {
+            String notEnrolledReason;
+            if (!course.isPremium()) {
+                notEnrolledReason = "You are not enrolled yet. Tap Enroll on this page to start (free on Basic).";
+            } else if (user.isAccountPremium()) {
+                notEnrolledReason = "You have Premium membership. Tap Enroll to add this course — Computer Networks and DBMS can be enrolled anytime without membership.";
+            } else {
+                notEnrolledReason = "This is a Premium course. Purchase Premium once from Upgrade or Billing (checkout enrolls you). After that you can self-enroll in other paid courses; Computer Networks and DBMS stay free to enroll anytime.";
+            }
             return new CourseAccessResponse(
                     courseDto,
                     CourseAccessState.NOT_ENROLLED.name(),
-                    "You are not enrolled in this course. Contact an administrator to request access.",
+                    notEnrolledReason,
                     null,
                     null,
                     null,
-                    null
+                    null,
+                    user.isAccountPremium()
             );
         }
 
@@ -82,15 +92,16 @@ public class EnrollmentAccessService {
                 ? PLAN_BASIC
                 : enrollment.getPlanType().toUpperCase();
 
-        if (course.isPremium() && !PLAN_PREMIUM.equals(plan)) {
+        if (course.isPremium() && !hasPremiumCourseAccess(plan, user)) {
             return new CourseAccessResponse(
                     courseDto,
                     CourseAccessState.PLAN_REQUIRED.name(),
-                    "This course requires a Premium plan. Ask an administrator to upgrade your enrollment.",
+                    "This course requires Premium. Use Upgrade / Billing to complete checkout and unlock lessons, quizzes, and live sessions.",
                     plan,
                     enrollment.getId(),
                     enrollment.getProgressPercentage(),
-                    enrollment.getLessonsLeft()
+                    enrollment.getLessonsLeft(),
+                    user.isAccountPremium()
             );
         }
 
@@ -103,19 +114,26 @@ public class EnrollmentAccessService {
                     plan,
                     enrollment.getId(),
                     enrollment.getProgressPercentage(),
-                    enrollment.getLessonsLeft()
+                    enrollment.getLessonsLeft(),
+                    user.isAccountPremium()
             );
         }
 
+        String displayPlan = (course.isPremium() && user.isAccountPremium()) ? PLAN_PREMIUM : plan;
         return new CourseAccessResponse(
                 courseDto,
                 CourseAccessState.ALLOWED.name(),
                 null,
-                plan,
+                displayPlan,
                 enrollment.getId(),
                 enrollment.getProgressPercentage(),
-                enrollment.getLessonsLeft()
+                enrollment.getLessonsLeft(),
+                user.isAccountPremium()
         );
+    }
+
+    private static boolean hasPremiumCourseAccess(String plan, User user) {
+        return PLAN_PREMIUM.equals(plan) || user.isAccountPremium();
     }
 
     /**

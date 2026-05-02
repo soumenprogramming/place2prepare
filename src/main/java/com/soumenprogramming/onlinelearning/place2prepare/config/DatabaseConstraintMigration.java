@@ -28,6 +28,10 @@ public class DatabaseConstraintMigration implements CommandLineRunner {
         jdbcTemplate.execute("ALTER TABLE courses ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT FALSE");
         jdbcTemplate.execute("UPDATE courses SET is_premium = FALSE WHERE is_premium IS NULL");
 
+        jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS account_premium BOOLEAN DEFAULT FALSE");
+        jdbcTemplate.execute("UPDATE users SET account_premium = FALSE WHERE account_premium IS NULL");
+        jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN account_premium SET NOT NULL");
+
         jdbcTemplate.execute("ALTER TABLE live_sessions ADD COLUMN IF NOT EXISTS course_id BIGINT");
         jdbcTemplate.execute("ALTER TABLE live_sessions ADD COLUMN IF NOT EXISTS description VARCHAR(2000)");
         jdbcTemplate.execute("ALTER TABLE live_sessions ADD COLUMN IF NOT EXISTS instructor_name VARCHAR(200)");

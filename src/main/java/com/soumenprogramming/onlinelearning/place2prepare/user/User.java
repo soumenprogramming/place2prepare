@@ -34,6 +34,9 @@ public class User {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "account_premium", nullable = false)
+    private boolean accountPremium;
+
     protected User() {
     }
 
@@ -43,6 +46,7 @@ public class User {
         this.password = password;
         this.role = role;
         this.createdAt = Instant.now();
+        this.accountPremium = false;
     }
 
     public Long getId() {
@@ -71,5 +75,13 @@ public class User {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public boolean isAccountPremium() {
+        return accountPremium;
+    }
+
+    public void setAccountPremium(boolean accountPremium) {
+        this.accountPremium = accountPremium;
     }
 }

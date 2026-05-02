@@ -359,8 +359,16 @@ export default function DashboardPage() {
                     No active courses yet.
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    An administrator will assign your first course shortly.
+                    Open the catalog: enroll in Computer Networks or DBMS anytime for free. For other courses,
+                    purchase Premium once from Billing, then self-enroll from each course page.
                   </p>
+                  <Link
+                    href="/courses"
+                    className="mt-4 inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-500"
+                  >
+                    Browse catalog
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
               )}
             </div>

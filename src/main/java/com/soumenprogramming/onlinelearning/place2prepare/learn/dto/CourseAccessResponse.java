@@ -9,6 +9,7 @@ public record CourseAccessResponse(
         String planType,
         Long enrollmentId,
         Integer progress,
-        Integer lessonsLeft
+        Integer lessonsLeft,
+        boolean accountPremium
 ) {
 }

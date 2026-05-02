@@ -49,7 +49,7 @@ public class SeedDataConfig {
                 ));
 
                 courseRepository.saveAll(List.of(
-                        new Course("DSA for Placements", "dsa-for-placements", "Comprehensive DSA roadmap for interviews.", "INTERMEDIATE", 42, true, false, dsa),
+                        new Course("DSA for Placements", "dsa-for-placements", "Comprehensive DSA roadmap for interviews.", "INTERMEDIATE", 42, true, true, dsa),
                         new Course("Computer Networks for Interviews", "cn-for-interviews", "Placement-oriented CN concepts and viva questions.", "INTERMEDIATE", 24, true, false, cn),
                         new Course("DBMS for Placements", "dbms-for-placements", "SQL + DBMS interview prep with real scenarios.", "BEGINNER", 26, true, false, dbms),
                         new Course("Core Java + Spring Boot", "core-java-spring-boot", "Backend engineering fundamentals with project practice.", "INTERMEDIATE", 35, true, true, springBoot)
