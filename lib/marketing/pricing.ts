@@ -34,7 +34,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     priceInr: 1499,
     priceSuffix: "per course",
     ctaLabel: "Upgrade a course",
-    ctaHref: "/courses",
+    ctaHref: "/checkout/premium",
     highlight: true,
     features: [
       "All Basic features",

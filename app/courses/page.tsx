@@ -1,20 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   BookOpen,
   Clock3,
+  CreditCard,
   Search,
   SlidersHorizontal,
   Sparkles,
   X,
 } from "lucide-react";
 import { extractErrorMessage } from "@/lib/api/client";
+import { startCheckout } from "@/lib/api/payments";
 import { MarketingShell } from "@/components/marketing/page-shell";
-import { dashboardPathForRole } from "@/lib/auth/session";
+import { PageLoader } from "@/components/ui/page-loader";
+import {
+  canActAsLearner,
+  dashboardPathForRole,
+  getSession,
+} from "@/lib/auth/session";
 import { useSessionSnapshot } from "@/lib/auth/use-session-snapshot";
 import {
   getCatalogCourses,
@@ -67,10 +75,15 @@ function CourseCardSkeleton() {
   );
 }
 
-export default function CatalogPage() {
+function CatalogPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const premiumOnly = searchParams.get("premium") === "1";
+
   const { isLoggedIn, role } = useSessionSnapshot();
   const backHref = dashboardPathForRole(isLoggedIn ? role : null);
   const backLabel = !isLoggedIn ? "home" : "dashboard";
+  const showPayOnCard = isLoggedIn && canActAsLearner(role);
 
   const [subjects, setSubjects] = useState<CatalogSubject[]>([]);
   const [courses, setCourses] = useState<CatalogCourse[]>([]);
@@ -79,6 +92,8 @@ export default function CatalogPage() {
   const [query, setQuery] = useState("");
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [errorMessage, setErrorMessage] = useState("");
+  const [checkoutCourseId, setCheckoutCourseId] = useState<number | null>(null);
+  const [payError, setPayError] = useState("");
 
   useEffect(() => {
     getCatalogSubjects()
@@ -99,6 +114,7 @@ export default function CatalogPage() {
     getCatalogCourses({
       subject,
       q: trimmedQuery ? trimmedQuery : undefined,
+      premium: premiumOnly,
     })
       .then((data) => {
         if (cancelled) return;
@@ -116,7 +132,7 @@ export default function CatalogPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeSubject, query]);
+  }, [activeSubject, query, premiumOnly]);
 
   const activeSubjectLabel = useMemo(() => {
     if (activeSubject === ALL_SUBJECTS) return "All subjects";
@@ -135,9 +151,41 @@ export default function CatalogPage() {
     setActiveSubject(ALL_SUBJECTS);
     setSearchInput("");
     setQuery("");
+    if (premiumOnly) {
+      router.replace("/courses");
+    }
   }
 
-  const hasActiveFilters = activeSubject !== ALL_SUBJECTS || query;
+  async function handlePremiumCheckout(courseId: number) {
+    const session = getSession();
+    if (!session || !canActAsLearner(session.role)) {
+        router.push(
+          `/login?redirect=${encodeURIComponent(
+            premiumOnly ? "/checkout/premium" : `/courses/${courseId}`
+          )}`
+        );
+      return;
+    }
+    setPayError("");
+    setCheckoutCourseId(courseId);
+    try {
+      const res = await startCheckout(session.token, courseId);
+      const url = (res.checkoutUrl ?? "").trim();
+      if (!url) {
+        setPayError(
+          "Checkout did not return a payment URL. Open the course page and use Upgrade, or try Billing."
+        );
+        return;
+      }
+      window.location.assign(url);
+    } catch (err: unknown) {
+      setPayError(extractErrorMessage(err, "Could not start payment."));
+    } finally {
+      setCheckoutCourseId(null);
+    }
+  }
+
+  const hasActiveFilters = activeSubject !== ALL_SUBJECTS || query || premiumOnly;
 
   return (
     <MarketingShell>
@@ -170,6 +218,14 @@ export default function CatalogPage() {
             <p className="mt-2 max-w-2xl text-sm text-white/85">
               Explore every subject and course. Open a course to enroll — Computer Networks and DBMS
               are free on Basic; other tracks use Premium after you upgrade once.
+              {premiumOnly ? (
+                <>
+                  {" "}
+                  <span className="font-semibold text-white">
+                    You are viewing paid tracks only — use Pay &amp; unlock to open checkout.
+                  </span>
+                </>
+              ) : null}
             </p>
 
             {/* Search */}
@@ -256,14 +312,16 @@ export default function CatalogPage() {
 
         {/* Results */}
         <section>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-slate-600">
               Showing{" "}
               <span className="font-bold text-slate-900">
                 {loadState === "ready" ? courses.length : "…"}
               </span>{" "}
               course{courses.length === 1 ? "" : "s"} in{" "}
-              <span className="font-bold text-slate-900">{activeSubjectLabel}</span>
+              <span className="font-bold text-slate-900">
+                {premiumOnly ? "Premium tracks" : activeSubjectLabel}
+              </span>
               {query && (
                 <>
                   {" "}matching{" "}
@@ -271,7 +329,33 @@ export default function CatalogPage() {
                 </>
               )}
             </p>
+            {premiumOnly ? (
+              <Link
+                href="/courses"
+                className="text-xs font-semibold text-indigo-600 underline-offset-2 hover:underline"
+              >
+                Show all courses
+              </Link>
+            ) : null}
           </div>
+
+          {premiumOnly ? (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-sm">
+              <p className="font-semibold">Checkout from the catalog</p>
+              <p className="mt-1 text-amber-900/95">
+                <strong>Pay &amp; unlock</strong> starts the same payment session as the course page
+                (Stripe or demo checkout). <strong>Course details</strong> opens the full course page if you
+                prefer to read more first.
+              </p>
+            </div>
+          ) : null}
+
+          {payError ? (
+            <div className="mb-4 flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-rose-500" />
+              {payError}
+            </div>
+          ) : null}
 
           {errorMessage && (
             <div className="mb-4 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -309,14 +393,15 @@ export default function CatalogPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {courses.map((course) => (
-                <Link
+                <div
                   key={course.id}
-                  href={`/courses/${course.id}`}
                   className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card transition hover:-translate-y-1 hover:border-indigo-200 hover:shadow-card-hover"
                 >
-                  {/* Card top accent */}
                   <div className="h-1 w-full bg-brand-gradient opacity-0 transition group-hover:opacity-100" />
-                  <div className="flex flex-1 flex-col p-5">
+                  <Link
+                    href={`/courses/${course.id}`}
+                    className="flex min-h-0 flex-1 flex-col p-5 text-left outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-indigo-700">
                         {course.subject}
@@ -337,17 +422,34 @@ export default function CatalogPage() {
                     <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600">
                       {course.description}
                     </p>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
+                  </Link>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
                     <span className="inline-flex items-center gap-1">
                       <Clock3 className="h-3.5 w-3.5" />
                       {course.durationHours}h
                     </span>
-                    <span className="inline-flex items-center gap-1 text-indigo-500 opacity-0 transition group-hover:opacity-100">
-                      View course →
-                    </span>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {course.premium && showPayOnCard ? (
+                        <button
+                          type="button"
+                          onClick={() => void handlePremiumCheckout(course.id)}
+                          disabled={checkoutCourseId === course.id}
+                          className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-indigo-500 disabled:opacity-60"
+                        >
+                          <CreditCard className="h-3.5 w-3.5" />
+                          {checkoutCourseId === course.id ? "Opening…" : "Pay & unlock"}
+                        </button>
+                      ) : null}
+                      <Link
+                        href={`/courses/${course.id}`}
+                        className="inline-flex items-center gap-1 font-semibold text-indigo-600 transition hover:text-indigo-700"
+                      >
+                        Course details
+                        <span aria-hidden>→</span>
+                      </Link>
+                    </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}
@@ -360,5 +462,21 @@ export default function CatalogPage() {
       </div>
       </div>
     </MarketingShell>
+  );
+}
+
+export default function CatalogPage() {
+  return (
+    <Suspense
+      fallback={
+        <MarketingShell>
+          <div className="flex min-h-[50vh] items-center justify-center p-6">
+            <PageLoader message="Loading catalog…" />
+          </div>
+        </MarketingShell>
+      }
+    >
+      <CatalogPageContent />
+    </Suspense>
   );
 }

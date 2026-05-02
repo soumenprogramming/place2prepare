@@ -31,7 +31,8 @@ public class CourseController {
 
     @GetMapping("/courses")
     public List<CourseResponse> courses(@RequestParam(required = false) String subject,
-                                        @RequestParam(required = false) String q) {
-        return courseService.getCourses(subject, q);
+                                        @RequestParam(required = false) String q,
+                                        @RequestParam(required = false) Boolean premium) {
+        return courseService.getCourses(subject, q, premium);
     }
 }
