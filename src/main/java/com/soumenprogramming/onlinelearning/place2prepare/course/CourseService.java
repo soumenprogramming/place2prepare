@@ -37,10 +37,14 @@ public class CourseService {
                 .toList();
     }
 
-    public List<CourseResponse> getCourses(String subject, String query) {
+    public List<CourseResponse> getCourses(String subject, String query, Boolean premiumOnly) {
         List<Course> courses = subject == null || subject.isBlank()
                 ? courseRepository.findByActiveTrueOrderByIdAsc()
                 : courseRepository.findByActiveTrueAndSubjectSlugOrderByIdAsc(subject);
+
+        if (Boolean.TRUE.equals(premiumOnly)) {
+            courses = courses.stream().filter(Course::isPremium).toList();
+        }
 
         String needle = query == null ? "" : query.trim().toLowerCase();
         return courses.stream()

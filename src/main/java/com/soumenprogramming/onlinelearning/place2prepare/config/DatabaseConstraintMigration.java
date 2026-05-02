@@ -66,5 +66,13 @@ public class DatabaseConstraintMigration implements CommandLineRunner {
                 WHERE NOT EXISTS (SELECT 1 FROM premium_price_setting WHERE id = 1)
                 """
         );
+
+        /* Align with seed defaults: paid tracks must be premium so checkout / catalog filters work. */
+        jdbcTemplate.update(
+                """
+                UPDATE courses SET is_premium = TRUE
+                WHERE slug IN ('dsa-for-placements', 'core-java-spring-boot')
+                """
+        );
     }
 }

@@ -234,7 +234,15 @@ export default function CourseDetailPage() {
     setUpgradeError("");
     try {
       const response = await startCheckout(sessionToken, Number(courseId));
-      window.location.href = response.checkoutUrl;
+      const url = (response.checkoutUrl ?? "").trim();
+      if (!url) {
+        setUpgradeError(
+          "Checkout did not return a payment URL. Check Billing for a pending order or contact support."
+        );
+        setUpgrading(false);
+        return;
+      }
+      window.location.assign(url);
     } catch (error) {
       setUpgradeError(
         extractErrorMessage(error, "Couldn't start checkout right now.")
